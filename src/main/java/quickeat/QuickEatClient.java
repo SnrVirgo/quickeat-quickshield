@@ -34,7 +34,7 @@ public class QuickEatClient implements ClientModInitializer {
     private static void onStartTick(Minecraft mc) {
         pressedThisTick = false;
         LocalPlayer player = mc.player;
-        if (player == null || !player.isAlive() || mc.screen != null) {
+        if (player == null || !player.isAlive() || mc.gui.screen() != null) {
             stop(mc);
             return;
         }
@@ -65,7 +65,7 @@ public class QuickEatClient implements ClientModInitializer {
 
     private static void onEndTick(Minecraft mc) {
         LocalPlayer player = mc.player;
-        if (player == null || !player.isAlive() || mc.screen != null) {
+        if (player == null || !player.isAlive() || mc.gui.screen() != null) {
             stop(mc);
             return;
         }
