@@ -10,17 +10,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import quickeat.mixin.KeyMappingAccessor;
 
-/**
- * Right click once, the mod holds "use" for you:
- *  - food     -> eats ONE item, then stops
- *  - shield   -> stays raised until you click again (or left click)
- *  - bow      -> stays drawn; the next right click releases = shoots
- *  - crossbow -> charges by itself; once loaded the next right click shoots (vanilla)
- * Which hand wins is vanilla behaviour: main hand first, so food in the main hand
- * is eaten before an off-hand shield is raised.
- */
 public class QuickEatClient implements ClientModInitializer {
-    private enum Mode { NONE, EAT, SHIELD, BOW, CROSSBOW }
+    private enum Mode { NONE, ONESHOT, SHIELD, HOLD, CROSSBOW }
 
     private static Mode mode = Mode.NONE;
     private static boolean pressedThisTick = false;
@@ -49,8 +40,6 @@ public class QuickEatClient implements ClientModInitializer {
         }
 
         if (pressed) {
-            // second press = release (bow shoots, shield lowers, eating is cancelled);
-            // swallow the click so vanilla doesn't start a new use
             use.quickeat$setClickCount(0);
             stop(mc);
             return;
@@ -59,7 +48,6 @@ public class QuickEatClient implements ClientModInitializer {
             stop(mc);
             return;
         }
-        // keep "use" held even if the real button was released
         mc.options.keyUse.setDown(true);
     }
 
@@ -82,7 +70,7 @@ public class QuickEatClient implements ClientModInitializer {
         }
 
         switch (mode) {
-            case EAT, BOW -> {
+            case ONESHOT, HOLD -> {
                 if (!player.isUsingItem()) {
                     stop(mc);
                     return;
@@ -101,7 +89,6 @@ public class QuickEatClient implements ClientModInitializer {
                 }
                 ItemStack crossbow = player.getUseItem();
                 if (player.getTicksUsingItem() >= CrossbowItem.getChargeDuration(crossbow, player)) {
-                    // fully charged: let go, the crossbow is now loaded; next right click shoots
                     stop(mc);
                     return;
                 }
@@ -114,12 +101,14 @@ public class QuickEatClient implements ClientModInitializer {
 
     private static Mode classify(ItemStack stack) {
         if (stack.isEmpty()) return Mode.NONE;
-        if (stack.get(DataComponents.FOOD) != null) return Mode.EAT;
-        ItemUseAnimation anim = stack.getUseAnimation();
-        if (anim == ItemUseAnimation.BLOCK) return Mode.SHIELD;
-        if (anim == ItemUseAnimation.BOW) return Mode.BOW;
-        if (anim == ItemUseAnimation.CROSSBOW) return Mode.CROSSBOW;
-        return Mode.NONE;
+        if (stack.get(DataComponents.FOOD) != null) return Mode.ONESHOT;
+        return switch (stack.getUseAnimation().name()) {
+            case "EAT", "DRINK", "TOOT_HORN", "BRUSH" -> Mode.ONESHOT;
+            case "BLOCK" -> Mode.SHIELD;
+            case "BOW", "SPEAR", "TRIDENT", "SPYGLASS" -> Mode.HOLD;
+            case "CROSSBOW" -> Mode.CROSSBOW;
+            default -> Mode.NONE;
+        };
     }
 
     private static void stop(Minecraft mc) {
