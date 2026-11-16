@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "quickeatquickshield",
+  "version": "${version}",
+  "name": "QuickEat QuickShield",
+  "description": "Press right mouse once: food is eaten (one item), a shield stays raised, a bow stays drawn, a crossbow charges itself. Press again to release/shoot.",
+  "authors": [],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "quickeat.QuickEatClient"
+    ]
+  },
+  "mixins": [
+    "quickeatquickshield.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.3-",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
